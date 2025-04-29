@@ -70,10 +70,6 @@ jobs:
           mix local.hex --force
           mix deps.get
 
-      - name: Install JS deps (if not cached)
-        if: steps.node-cache.outputs.cache-hit != 'true'
-        run: npm i --prefix assets
-
       # `mix format` is now mature enough that we can enforce it
       - name: Check that `mix format` has been run
         run: mix format --check-formatted
