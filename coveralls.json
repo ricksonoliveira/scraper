@@ -1,0 +1,18 @@
+{
+  "skip_files": [
+    "lib/scraper/application.ex",
+    "lib/scraper_web.ex",
+    "lib/scraper_web/views/error_helpers.ex",
+    "lib/scraper_web/live/page_live.ex",
+    "test/support/channel_case.ex",
+    "test/support/data_case.ex",
+    "lib/scraper_web/telemetry.ex",
+    "lib/scraper_web/router.ex",
+    "lib/scraper_web/components/core_components.ex"
+  ],
+  "coverage_options": {
+    "treat_no_relevant_lines_as_covered": true,
+    "output_dir": "cover/",
+    "minimum_coverage": 95
+  }
+}
