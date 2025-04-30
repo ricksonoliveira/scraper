@@ -78,7 +78,7 @@ defmodule Scraper.MixProject do
       {:absinthe, "~> 1.7"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe_phoenix, "~> 2.0"},
-      
+
       # HTTP client for scraping
       {:httpoison, "~> 2.0"},
       {:floki, "~> 0.37.1"},
