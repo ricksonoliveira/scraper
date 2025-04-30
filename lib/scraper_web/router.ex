@@ -23,22 +23,6 @@ defmodule ScraperWeb.Router do
     get "/", PageController, :home
   end
 
-  # GraphQL API for authenticated users
-  scope "/api" do
-    pipe_through [:browser, :require_authenticated_user]
-
-    forward "/graphql", Absinthe.Plug,
-      schema: ScraperWeb.GraphQL.Schema,
-      context: {ScraperWeb.AbsintheContext, :build_context}
-
-    if Mix.env() == :dev do
-      forward "/graphiql", Absinthe.Plug.GraphiQL,
-        schema: ScraperWeb.GraphQL.Schema,
-        context: {ScraperWeb.AbsintheContext, :build_context},
-        interface: :playground
-    end
-  end
-
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:scraper, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
