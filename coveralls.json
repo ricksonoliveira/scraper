@@ -8,7 +8,8 @@
     "test/support/data_case.ex",
     "lib/scraper_web/telemetry.ex",
     "lib/scraper_web/router.ex",
-    "lib/scraper_web/components/core_components.ex"
+    "lib/scraper_web/components/core_components.ex",
+    "lib/scraper/release.ex"
   ],
   "coverage_options": {
     "treat_no_relevant_lines_as_covered": true,

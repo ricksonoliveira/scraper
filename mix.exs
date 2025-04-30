@@ -48,7 +48,6 @@ defmodule Scraper.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.0"},
-      {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
@@ -73,6 +72,20 @@ defmodule Scraper.MixProject do
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false},
+      {:tidewave, "~> 0.1", only: :dev},
+
+      # GraphQL
+      {:absinthe, "~> 1.7"},
+      {:absinthe_plug, "~> 1.5"},
+      {:absinthe_phoenix, "~> 2.0"},
+
+      # HTTP client for scraping
+      {:httpoison, "~> 2.0"},
+      {:floki, "~> 0.37.1"},
+
+      # Authentication
+      {:bcrypt_elixir, "~> 3.0"},
+      {:guardian, "~> 2.3"},
 
       # Test tools: Because TDD is awesome 🏇
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false}
