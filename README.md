@@ -56,7 +56,7 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser an
 
 ## Architecture and Design Patterns 🖼️
 
-### Asynchronous Processing
+### Asynchronous Processing 🔀
 
 The application uses Elixir's `Task.async` to handle web scraping in the background, preventing the UI from blocking during potentially long-running scraping operations. This is especially important for large web pages with many links.
 
@@ -177,7 +177,7 @@ COV    FILE                                        LINES RELEVANT   MISSED
 ----------------
 ```
 
-## Future Improvements
+## Future Improvements 👨‍🚀
 
 With more time, the application could be enhanced with:
 
