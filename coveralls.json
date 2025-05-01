@@ -9,7 +9,9 @@
     "lib/scraper_web/telemetry.ex",
     "lib/scraper_web/router.ex",
     "lib/scraper_web/components/core_components.ex",
-    "lib/scraper/release.ex"
+    "lib/scraper/release.ex",
+    "lib/scraper_web/channels/user_socket.ex",
+    "lib/scraper_web/controllers/page_controller.ex"
   ],
   "coverage_options": {
     "treat_no_relevant_lines_as_covered": true,

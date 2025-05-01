@@ -1,5 +1,6 @@
 defmodule ScraperWeb.UserConfirmationLiveTest do
   use ScraperWeb.ConnCase, async: true
+  use Mimic
 
   import Phoenix.LiveViewTest
   import Scraper.AccountsFixtures
@@ -18,10 +19,12 @@ defmodule ScraperWeb.UserConfirmationLiveTest do
     end
 
     test "confirms the given token once", %{conn: conn, user: user} do
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
-        end)
+      # Create a token manually for testing
+      # We can't use deliver_user_confirmation_instructions since it auto-confirms now
+      {encoded_token, user_token} = Scraper.Accounts.UserToken.build_email_token(user, "confirm")
+      Repo.insert!(user_token)
+
+      token = encoded_token
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
 

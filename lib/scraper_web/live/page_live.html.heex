@@ -1,0 +1,254 @@
+<div class="container px-2 py-8 mx-auto">
+  <%= if @current_user do %>
+    <div class="p-6 mb-8 bg-white rounded-lg shadow-md">
+      <h2 class="mb-4 text-2xl font-bold">Add URL to Scrape</h2>
+      <.form
+        for={%{}}
+        phx-submit="scrape"
+        phx-change="validate"
+        class="flex flex-col gap-4 md:flex-row"
+      >
+        <div class="flex-grow">
+          <input
+            type="url"
+            name="url"
+            value={@url}
+            placeholder="Enter URL to scrape (e.g., https://example.com)"
+            required
+            class="px-4 py-2 w-full rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <button
+          type="submit"
+          class="px-6 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={@loading}
+        >
+          <%= if @loading do %>
+            <span class="inline-block mr-2 animate-spin">⟳</span> Scraping...
+          <% else %>
+            Scrape
+          <% end %>
+        </button>
+      </.form>
+    </div>
+
+    <div class="p-2 bg-white rounded-lg shadow-md">
+      <h2 class="mb-4 text-2xl font-bold">Your Scraped Pages</h2>
+
+      <%= if Enum.empty?(@pages) do %>
+        <div class="py-8 text-center text-gray-500">
+          <p>You haven't scraped any pages yet. Add a URL above to get started.</p>
+        </div>
+      <% else %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Title
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  URL
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Links Found
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Status
+                </th>
+                <th
+                  scope="col"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <%= for page <- @pages do %>
+                <tr id={"page-#{page.id}"} class="hover:bg-gray-50">
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                    {page.title}
+                  </td>
+                  <td class="px-6 py-4 max-w-xs text-sm text-gray-500 truncate whitespace-nowrap">
+                    {page.url}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                    <%= if page.status == "completed" do %>
+                      {length(page.links)}
+                    <% else %>
+                      -
+                    <% end %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <%= case page.status do %>
+                      <% "completed" -> %>
+                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-green-800 bg-green-100 rounded-full">
+                          Completed
+                        </span>
+                      <% "in progress" -> %>
+                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-blue-800 bg-blue-100 rounded-full">
+                          In Progress
+                        </span>
+                      <% "processing" -> %>
+                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-blue-800 bg-blue-100 rounded-full">
+                          Processing
+                        </span>
+                      <% "error" -> %>
+                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-red-800 bg-red-100 rounded-full">
+                          Error
+                        </span>
+                      <% _ -> %>
+                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-gray-800 bg-gray-100 rounded-full">
+                          Unknown
+                        </span>
+                    <% end %>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                    <%= if page.status == "completed" do %>
+                      <.link
+                        navigate={~p"/pages/#{page.id}"}
+                        class="text-blue-600 hover:text-blue-900"
+                      >
+                        View Links
+                      </.link>
+                    <% else %>
+                      -
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        
+<!-- Pagination -->
+        <%= if Enum.any?(@pages) do %>
+          <div
+            id="pagination"
+            class="flex justify-between items-center px-4 py-3 mt-4 bg-white border-t border-gray-200 sm:px-6"
+          >
+            <div class="flex flex-1 justify-between sm:hidden">
+              <%= if @page_number > 1 do %>
+                <.link
+                  navigate={page_path(@socket, @page_number - 1)}
+                  class="inline-flex relative items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 hover:bg-gray-50"
+                >
+                  Previous
+                </.link>
+              <% else %>
+                <span class="inline-flex relative items-center px-4 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-md border border-gray-300">
+                  Previous
+                </span>
+              <% end %>
+
+              <%= if @page_number < total_pages(@total_count, @page_size) do %>
+                <.link
+                  navigate={page_path(@socket, @page_number + 1)}
+                  class="inline-flex relative items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 hover:bg-gray-50"
+                >
+                  Next
+                </.link>
+              <% else %>
+                <span class="inline-flex relative items-center px-4 py-2 ml-3 text-sm font-medium text-gray-500 bg-gray-100 rounded-md border border-gray-300">
+                  Next
+                </span>
+              <% end %>
+            </div>
+
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing {(@page_number - 1) * @page_size + 1} to {min(
+                    @page_number * @page_size,
+                    @total_count
+                  )} of {@total_count} results
+                </p>
+              </div>
+              <div>
+                <nav
+                  class="inline-flex isolate -space-x-px rounded-md shadow-sm"
+                  aria-label="Pagination"
+                >
+                  <%= if @page_number > 1 do %>
+                    <.link
+                      navigate={page_path(@socket, @page_number - 1)}
+                      class="inline-flex relative items-center px-2 py-2 text-gray-400 rounded-l-md ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                    >
+                      <span class="sr-only">Previous</span> &larr;
+                    </.link>
+                  <% else %>
+                    <span class="inline-flex relative items-center px-2 py-2 text-gray-300 rounded-l-md ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                      <span class="sr-only">Previous</span> &larr;
+                    </span>
+                  <% end %>
+
+                  <%= for page_num <- max(1, @page_number - 2)..min(total_pages(@total_count, @page_size), @page_number + 2) do %>
+                    <%= if page_num == @page_number do %>
+                      <span class="inline-flex relative z-10 items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                        {page_num}
+                      </span>
+                    <% else %>
+                      <.link
+                        navigate={page_path(@socket, page_num)}
+                        class="inline-flex relative items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                      >
+                        {page_num}
+                      </.link>
+                    <% end %>
+                  <% end %>
+
+                  <%= if @page_number < total_pages(@total_count, @page_size) do %>
+                    <.link
+                      navigate={page_path(@socket, @page_number + 1)}
+                      class="inline-flex relative items-center px-2 py-2 text-gray-400 rounded-r-md ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                    >
+                      <span class="sr-only">Next</span> &rarr;
+                    </.link>
+                  <% else %>
+                    <span class="inline-flex relative items-center px-2 py-2 text-gray-300 rounded-r-md ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                      <span class="sr-only">Next</span> &rarr;
+                    </span>
+                  <% end %>
+                </nav>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="py-12 text-center">
+      <h1 class="mb-4 text-4xl font-bold text-gray-900">Welcome to Scraper</h1>
+      <p class="mb-8 text-xl text-gray-600">
+        A simple web scraping tool to extract links from web pages.
+      </p>
+      <div class="flex justify-center space-x-4">
+        <.link
+          navigate={~p"/users/register"}
+          class="px-6 py-3 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Register
+        </.link>
+        <.link
+          navigate={~p"/users/log_in"}
+          class="px-6 py-3 font-medium text-blue-600 bg-white rounded-md border border-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Log in
+        </.link>
+      </div>
+    </div>
+  <% end %>
+</div>

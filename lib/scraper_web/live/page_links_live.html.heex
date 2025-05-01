@@ -1,0 +1,185 @@
+<div class="container px-4 py-8 mx-auto">
+  <div class="flex items-center mb-6">
+    <.link navigate={~p"/"} class="mr-4 text-blue-600 hover:text-blue-900">
+      &larr; Back to Pages
+    </.link>
+    <h1 class="text-2xl font-bold">Links for: {@page.title}</h1>
+  </div>
+
+  <div class="p-6 bg-white rounded-lg shadow-md">
+    <div class="mb-6">
+      <h2 class="mb-2 text-lg font-semibold">Page Details</h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <p class="text-sm text-gray-500">URL</p>
+          <p class="text-sm font-medium break-all">{@page.url}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-500">Status</p>
+          <p class="text-sm font-medium">
+            <%= case @page.status do %>
+              <% "completed" -> %>
+                <span class="inline-flex px-2 text-xs font-semibold leading-5 text-green-800 bg-green-100 rounded-full">
+                  Completed
+                </span>
+              <% "in progress" -> %>
+                <span class="inline-flex px-2 text-xs font-semibold leading-5 text-blue-800 bg-blue-100 rounded-full">
+                  In Progress
+                </span>
+              <% "processing" -> %>
+                <span class="inline-flex px-2 text-xs font-semibold leading-5 text-blue-800 bg-blue-100 rounded-full">
+                  Processing
+                </span>
+              <% "error" -> %>
+                <span class="inline-flex px-2 text-xs font-semibold leading-5 text-red-800 bg-red-100 rounded-full">
+                  Error
+                </span>
+              <% _ -> %>
+                <span class="inline-flex px-2 text-xs font-semibold leading-5 text-gray-800 bg-gray-100 rounded-full">
+                  Unknown
+                </span>
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="mb-4 text-xl font-bold">Links Found ({@total_count})</h2>
+
+    <%= if Enum.empty?(@links) do %>
+      <div class="py-8 text-center text-gray-500">
+        <p>No links found on this page.</p>
+      </div>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+              >
+                Link Text
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+              >
+                URL
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <%= for link <- @links do %>
+              <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {format_link_name(link.name)}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500 break-all">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    class="text-blue-600 hover:text-blue-900 hover:underline"
+                  >
+                    {link.url}
+                  </a>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      
+<!-- Pagination -->
+      <%= if @links && length(@links) > 0 do %>
+        <div class="flex justify-between items-center px-4 py-3 mt-4 bg-white border-t border-gray-200 sm:px-6">
+          <div class="flex flex-1 justify-between sm:hidden">
+            <%= if @page_number > 1 do %>
+              <.link
+                navigate={page_path(%{assigns: %{page: @page}}, @page_number - 1)}
+                class="inline-flex relative items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 hover:bg-gray-50"
+              >
+                Previous
+              </.link>
+            <% else %>
+              <span class="inline-flex relative items-center px-4 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-md border border-gray-300">
+                Previous
+              </span>
+            <% end %>
+
+            <%= if @page_number < total_pages(@total_count, @page_size) do %>
+              <.link
+                navigate={page_path(%{assigns: %{page: @page}}, @page_number + 1)}
+                class="inline-flex relative items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white rounded-md border border-gray-300 hover:bg-gray-50"
+              >
+                Next
+              </.link>
+            <% else %>
+              <span class="inline-flex relative items-center px-4 py-2 ml-3 text-sm font-medium text-gray-500 bg-gray-100 rounded-md border border-gray-300">
+                Next
+              </span>
+            <% end %>
+          </div>
+
+          <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm text-gray-700">
+                Showing {(@page_number - 1) * @page_size + 1} to {min(
+                  @page_number * @page_size,
+                  @total_count
+                )} of {@total_count} results
+              </p>
+            </div>
+            <div>
+              <nav
+                class="inline-flex isolate -space-x-px rounded-md shadow-sm"
+                aria-label="Pagination"
+              >
+                <%= if @page_number > 1 do %>
+                  <.link
+                    navigate={page_path(%{assigns: %{page: @page}}, @page_number - 1)}
+                    class="inline-flex relative items-center px-2 py-2 text-gray-400 rounded-l-md ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  >
+                    <span class="sr-only">Previous</span> &larr;
+                  </.link>
+                <% else %>
+                  <span class="inline-flex relative items-center px-2 py-2 text-gray-300 rounded-l-md ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                    <span class="sr-only">Previous</span> &larr;
+                  </span>
+                <% end %>
+
+                <%= for page_num <- max(1, @page_number - 2)..min(total_pages(@total_count, @page_size), @page_number + 2) do %>
+                  <%= if page_num == @page_number do %>
+                    <span class="inline-flex relative z-10 items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                      {page_num}
+                    </span>
+                  <% else %>
+                    <.link
+                      navigate={page_path(%{assigns: %{page: @page}}, page_num)}
+                      class="inline-flex relative items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                    >
+                      {page_num}
+                    </.link>
+                  <% end %>
+                <% end %>
+
+                <%= if @page_number < total_pages(@total_count, @page_size) do %>
+                  <.link
+                    navigate={page_path(%{assigns: %{page: @page}}, @page_number + 1)}
+                    class="inline-flex relative items-center px-2 py-2 text-gray-400 rounded-r-md ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                  >
+                    <span class="sr-only">Next</span> &rarr;
+                  </.link>
+                <% else %>
+                  <span class="inline-flex relative items-center px-2 py-2 text-gray-300 rounded-r-md ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                    <span class="sr-only">Next</span> &rarr;
+                  </span>
+                <% end %>
+              </nav>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>

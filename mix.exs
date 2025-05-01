@@ -72,12 +72,6 @@ defmodule Scraper.MixProject do
       {:sobelow, "~> 0.12", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.10", only: [:dev, :test], runtime: false},
-      {:tidewave, "~> 0.1", only: :dev},
-
-      # GraphQL
-      {:absinthe, "~> 1.7"},
-      {:absinthe_plug, "~> 1.5"},
-      {:absinthe_phoenix, "~> 2.0"},
 
       # HTTP client for scraping
       {:httpoison, "~> 2.0"},
@@ -88,7 +82,8 @@ defmodule Scraper.MixProject do
       {:guardian, "~> 2.3"},
 
       # Test tools: Because TDD is awesome 🏇
-      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false}
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:mimic, "~> 1.7", only: :test}
     ]
   end
 

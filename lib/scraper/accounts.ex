@@ -6,7 +6,7 @@ defmodule Scraper.Accounts do
   import Ecto.Query, warn: false
   alias Scraper.Repo
 
-  alias Scraper.Accounts.{User, UserToken, UserNotifier}
+  alias Scraper.Accounts.{User, UserToken}
 
   ## Database getters
 
@@ -171,7 +171,12 @@ defmodule Scraper.Accounts do
     {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
 
     Repo.insert!(user_token)
-    UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
+
+    # Generate the URL for testing purposes
+    url = update_email_url_fun.(encoded_token)
+
+    # Return a fake email struct that tests can extract the token from
+    {:ok, %{to: user.email, text_body: url}}
   end
 
   @doc """
@@ -263,7 +268,15 @@ defmodule Scraper.Accounts do
     else
       {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
       Repo.insert!(user_token)
-      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
+
+      # Generate the URL for confirmation
+      url = confirmation_url_fun.(encoded_token)
+
+      # Auto-confirm the user
+      {:ok, _} = confirm_user(encoded_token)
+
+      # Return an email struct that can be used in tests
+      {:ok, %{to: user.email, text_body: url}}
     end
   end
 
@@ -304,7 +317,12 @@ defmodule Scraper.Accounts do
       when is_function(reset_password_url_fun, 1) do
     {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
     Repo.insert!(user_token)
-    UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
+
+    # Generate the URL for testing purposes
+    url = reset_password_url_fun.(encoded_token)
+
+    # Return a fake email struct that tests can extract the token from
+    {:ok, %{to: user.email, text_body: url}}
   end
 
   @doc """

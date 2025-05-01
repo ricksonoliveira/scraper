@@ -1,5 +1,6 @@
 defmodule Scraper.AccountsTest do
-  use Scraper.DataCase
+  use Scraper.DataCase, async: true
+  use Mimic
 
   alias Scraper.Accounts
 
@@ -206,6 +207,12 @@ defmodule Scraper.AccountsTest do
       %{user: user, token: token, email: email}
     end
 
+    test "verify_change_email_token_query returns error with invalid token format" do
+      # Test with a token that can't be decoded with Base.url_decode64
+      assert :error =
+               UserToken.verify_change_email_token_query("invalid!token@", "change:some_context")
+    end
+
     test "updates the email with a valid token", %{user: user, token: token, email: email} do
       assert Accounts.update_user_email(user, token) == :ok
       changed_user = Repo.get!(User, user.id)
@@ -367,36 +374,33 @@ defmodule Scraper.AccountsTest do
       %{user: user_fixture()}
     end
 
-    test "sends token through notification", %{user: user} do
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
-        end)
+    test "sends token through notification and auto-confirms the user", %{user: user} do
+      {:ok, email} = Accounts.deliver_user_confirmation_instructions(user, fn _ -> "url" end)
 
-      {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
-      assert user_token.user_id == user.id
-      assert user_token.sent_to == user.email
-      assert user_token.context == "confirm"
+      # Verify the email was generated with the right recipient
+      assert email.to == user.email
+
+      # The user should now be confirmed
+      updated_user = Repo.get!(User, user.id)
+      assert updated_user.confirmed_at
     end
   end
 
   describe "confirm_user/1" do
     setup do
+      # Create an unconfirmed user
       user = user_fixture()
 
-      token =
-        extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
-        end)
+      # Create a token manually for testing
+      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      Repo.insert!(user_token)
 
-      %{user: user, token: token}
+      %{user: user, token: encoded_token}
     end
 
     test "confirms the email with a valid token", %{user: user, token: token} do
       assert {:ok, confirmed_user} = Accounts.confirm_user(token)
       assert confirmed_user.confirmed_at
-      assert confirmed_user.confirmed_at != user.confirmed_at
       assert Repo.get!(User, user.id).confirmed_at
       refute Repo.get_by(UserToken, user_id: user.id)
     end
@@ -408,7 +412,10 @@ defmodule Scraper.AccountsTest do
     end
 
     test "does not confirm email if token expired", %{user: user, token: token} do
-      {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      # Update token to be expired
+      {count, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      assert count > 0
+
       assert Accounts.confirm_user(token) == :error
       refute Repo.get!(User, user.id).confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)

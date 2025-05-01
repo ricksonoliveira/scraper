@@ -84,4 +84,31 @@ defmodule ScraperWeb.UserRegistrationLiveTest do
       assert login_html =~ "Log in"
     end
   end
+
+  describe "form validation" do
+    test "resets check_errors when changeset becomes valid", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/register")
+
+      # First submit invalid data to trigger check_errors
+      lv
+      |> form("#registration_form", user: %{"email" => "invalid", "password" => "short"})
+      |> render_submit()
+
+      # Verify check_errors is displayed
+      assert render(lv) =~ "Oops, something went wrong!"
+
+      # Now submit valid data
+      valid_email = unique_user_email()
+
+      result =
+        lv
+        |> form("#registration_form",
+          user: %{"email" => valid_email, "password" => "valid_password123"}
+        )
+        |> render_change()
+
+      # Verify check_errors is no longer displayed
+      refute result =~ "Oops, something went wrong!"
+    end
+  end
 end

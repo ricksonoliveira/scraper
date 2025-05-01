@@ -17,7 +17,7 @@ defmodule ScraperWeb.UserConfirmationInstructionsLiveTest do
       assert html =~ "Resend confirmation instructions"
     end
 
-    test "sends a new confirmation token", %{conn: conn, user: user} do
+    test "sends a new confirmation token and auto-confirms the user", %{conn: conn, user: user} do
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
       {:ok, conn} =
@@ -29,7 +29,9 @@ defmodule ScraperWeb.UserConfirmationInstructionsLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
 
-      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context == "confirm"
+      # The user should now be confirmed since we auto-confirm
+      updated_user = Repo.get!(Accounts.User, user.id)
+      assert updated_user.confirmed_at
     end
 
     test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
