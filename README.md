@@ -198,4 +198,6 @@ With more time, the application could be enhanced with:
 
 7. **Distributed Scraping**: Scale the application using Elixir's distributed capabilities to handle very large websites.
 
+8. **Frontend Responsiveness**: Improve the frontend responsiveness and user experience for mobile devices.
+
 Cheers! 🍾
