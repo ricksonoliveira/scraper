@@ -71,12 +71,13 @@ end)
 
 ### Best practices used in this application: 🛟
 
-- **Phoenix Auth generator**: The `phx.gen.auth` generator was used to create a safe and seamless authentication system built-in from Phoenix.
-- **TDD development**: Tools like `test.watch` and `coveralls` were used to ensure code test coverage while developing the application.
-- **Credo**: `Credo` was used to enforce code quality and style consistency.
-- **Dialyxir**: `Dialyxir` was used to enforce code quality and type safety.
-- **Sobelow**: `Sobelow` was used to enforce code security.
+- **Phoenix Auth generator**: The `phx.gen.auth` generator was used to create a safe and seamless authentication system built-in from Phoenix. 🔒
+- **TDD development**: Tools like `test.watch` and `coveralls` were used to ensure code test coverage while developing the application. 🧪
+- **Credo**: `Credo` was used to enforce code quality and style consistency. ✅
+- **Dialyxir**: `Dialyxir` was used to enforce code quality and type safety. 🆙
+- **Sobelow**: `Sobelow` was used to enforce code security. 🛡️
 - **CI/CD**: GitHub Actions were used to enforce continuous integration and delivery. The application is deployed to [Fly.io](https://fly.io) at https://scraper-purple-voice-8836.fly.dev. ✈️
+- **Documentation and Comments**: All functions are documented with descriptions, examples, and comments throughout the codebase. 📝
 
 ### Real-time Updates with PubSub 📈
 
