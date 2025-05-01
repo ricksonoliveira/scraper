@@ -91,6 +91,40 @@ defmodule ScraperWeb.PageLive do
     {:noreply, assign(socket, :url, url)}
   end
 
+  @impl true
+  def handle_event("delete_page", %{"id" => id}, socket) do
+    page = Scraping.get_page!(id)
+
+    # Check if the page belongs to the current user
+    if page.user_id == socket.assigns.current_user.id do
+      case Scraping.delete_page(page) do
+        {:ok, _} ->
+          # Refresh the pages list
+          {pages, total_count} =
+            Scraping.list_pages_paginated(
+              socket.assigns.current_user.id,
+              socket.assigns.page_number,
+              socket.assigns.page_size
+            )
+
+          {:noreply,
+           socket
+           |> assign(:pages, pages)
+           |> assign(:total_count, total_count)
+           |> put_flash(:info, "Page deleted successfully.")}
+
+        {:error, _} ->
+          {:noreply,
+           socket
+           |> put_flash(:error, "Failed to delete page.")}
+      end
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "You don't have permission to delete this page.")}
+    end
+  end
+
   defp assign_defaults(socket, session) do
     socket
     |> assign_new(:current_user, fn ->
@@ -131,8 +165,8 @@ defmodule ScraperWeb.PageLive do
     updated_pages =
       Enum.map(socket.assigns.pages, fn page ->
         if page.id == payload.id do
-          # Update only the status and title fields
-          %{page | status: payload.status, title: payload.title}
+          # Update the status, title, and link_count fields
+          %{page | status: payload.status, title: payload.title, link_count: payload.link_count}
         else
           page
         end

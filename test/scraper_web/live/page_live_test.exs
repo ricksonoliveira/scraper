@@ -112,5 +112,49 @@ defmodule ScraperWeb.PageLiveTest do
       rendered = render(view)
       assert length(Floki.find(rendered, "tbody tr")) == 1
     end
+
+    test "deletes a page when delete button is clicked", %{conn: conn} do
+      user = user_fixture()
+      page = page_fixture(%{user_id: user.id, status: "completed"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      # Verify the page exists in the view
+      assert has_element?(view, "td", page.title)
+
+      # Click the delete button (with JS confirm dialog bypassed for testing)
+      view
+      |> element("button[phx-click='delete_page'][phx-value-id='#{page.id}']", "Delete")
+      |> render_click()
+
+      # Check flash message
+      assert has_element?(view, "#flash-info", "Page deleted successfully")
+
+      # Verify the page no longer exists in the database
+      assert Scraping.get_page(page.id) == nil
+
+      # Verify the page is no longer displayed in the view
+      refute has_element?(view, "td", page.title)
+    end
+
+    test "prevents deleting a page that doesn't belong to the user", %{conn: conn} do
+      user = user_fixture()
+      other_user = user_fixture()
+      page = page_fixture(%{user_id: other_user.id, status: "completed"})
+
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/")
+
+      # Manually trigger the delete_page event with the other user's page ID
+      view
+      |> render_hook("delete_page", %{"id" => page.id})
+
+      # Check error flash message
+      assert has_element?(view, "#flash-error", "You don't have permission to delete this page")
+
+      # Verify the page still exists in the database
+      assert Scraping.get_page(page.id) != nil
+    end
   end
 end

@@ -1,6 +1,6 @@
-<div class="container px-2 py-8 mx-auto">
+<div class="w-full px-6 py-6 mx-auto">
   <%= if @current_user do %>
-    <div class="p-6 mb-8 bg-white rounded-lg shadow-md">
+    <div class="p-6 mb-8 bg-white rounded-lg shadow-md w-full">
       <h2 class="mb-4 text-2xl font-bold">Add URL to Scrape</h2>
       <.form
         for={%{}}
@@ -32,7 +32,7 @@
       </.form>
     </div>
 
-    <div class="p-2 bg-white rounded-lg shadow-md">
+    <div class="p-4 bg-white rounded-lg shadow-md w-full">
       <h2 class="mb-4 text-2xl font-bold">Your Scraped Pages</h2>
 
       <%= if Enum.empty?(@pages) do %>
@@ -40,37 +40,37 @@
           <p>You haven't scraped any pages yet. Add a URL above to get started.</p>
         </div>
       <% else %>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
+        <div class="overflow-x-auto w-full">
+          <table class="w-full table-fixed border-collapse divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase w-[30%]"
                 >
                   Title
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase w-[30%]"
                 >
                   URL
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase w-[10%]"
                 >
                   Links Found
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase w-[15%]"
                 >
                   Status
                 </th>
                 <th
                   scope="col"
-                  class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase"
+                  class="px-6 py-3 text-xs font-medium tracking-wider text-center text-gray-500 uppercase w-[15%]"
                 >
                   Actions
                 </th>
@@ -79,32 +79,28 @@
             <tbody class="bg-white divide-y divide-gray-200">
               <%= for page <- @pages do %>
                 <tr id={"page-#{page.id}"} class="hover:bg-gray-50">
-                  <td class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
-                    {page.title}
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900 w-[30%]">
+                    <div class="truncate max-w-[300px]" title={page.title}>{page.title}</div>
                   </td>
-                  <td class="px-6 py-4 max-w-xs text-sm text-gray-500 truncate whitespace-nowrap">
-                    {page.url}
+                  <td class="px-6 py-4 text-sm text-gray-500 w-[30%]">
+                    <div class="truncate max-w-[300px]" title={page.url}>{page.url}</div>
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                  <td class="px-6 py-4 text-sm text-gray-500 text-center w-[10%]">
                     <%= if page.status == "completed" do %>
-                      {length(page.links)}
+                      {page.link_count}
                     <% else %>
                       -
                     <% end %>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td class="px-6 py-4 text-center w-[15%]">
                     <%= case page.status do %>
                       <% "completed" -> %>
                         <span class="inline-flex px-2 text-xs font-semibold leading-5 text-green-800 bg-green-100 rounded-full">
                           Completed
                         </span>
                       <% "in progress" -> %>
-                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-blue-800 bg-blue-100 rounded-full">
+                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-yellow-800 bg-yellow-100 rounded-full">
                           In Progress
-                        </span>
-                      <% "processing" -> %>
-                        <span class="inline-flex px-2 text-xs font-semibold leading-5 text-blue-800 bg-blue-100 rounded-full">
-                          Processing
                         </span>
                       <% "error" -> %>
                         <span class="inline-flex px-2 text-xs font-semibold leading-5 text-red-800 bg-red-100 rounded-full">
@@ -112,21 +108,31 @@
                         </span>
                       <% _ -> %>
                         <span class="inline-flex px-2 text-xs font-semibold leading-5 text-gray-800 bg-gray-100 rounded-full">
-                          Unknown
+                          {page.status}
                         </span>
                     <% end %>
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
-                    <%= if page.status == "completed" do %>
-                      <.link
-                        navigate={~p"/pages/#{page.id}"}
-                        class="text-blue-600 hover:text-blue-900"
+                  <td class="px-6 py-4 text-sm font-medium text-center w-[15%]">
+                    <div class="flex justify-center gap-2">
+                      <%= if page.status == "completed" do %>
+                        <.link
+                          navigate={~p"/pages/#{page.id}"}
+                          class="inline-block px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200"
+                        >
+                          View Links
+                        </.link>
+                      <% else %>
+                        <span class="text-gray-400">-</span>
+                      <% end %>
+                      <button
+                        phx-click="delete_page"
+                        phx-value-id={page.id}
+                        data-confirm="Are you sure you want to delete this page and all its links? This action cannot be undone."
+                        class="inline-block px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200"
                       >
-                        View Links
-                      </.link>
-                    <% else %>
-                      -
-                    <% end %>
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               <% end %>
