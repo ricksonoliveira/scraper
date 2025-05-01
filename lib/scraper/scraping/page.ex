@@ -6,7 +6,7 @@ defmodule Scraper.Scraping.Page do
     field :status, :string
     field :title, :string
     field :url, :string
-    
+
     belongs_to :user, Scraper.Accounts.User
     has_many :links, Scraper.Scraping.Link
 

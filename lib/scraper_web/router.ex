@@ -20,7 +20,8 @@ defmodule ScraperWeb.Router do
   scope "/", ScraperWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", PageLive, :index
+    live "/pages/:id", PageLinksLive, :show
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

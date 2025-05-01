@@ -12,13 +12,13 @@
     </script>
   </head>
   <body class="bg-white">
-    <header class="py-4 border-b border-gray-200 mb-4">
-      <div class="container mx-auto px-4 flex items-center justify-between">
+    <header class="py-4 mb-4 border-b border-gray-200">
+      <div class="container flex justify-between items-center px-4 mx-auto">
         <div class="flex items-center">
           <a href="/" class="text-xl font-bold text-gray-800">Scraper</a>
         </div>
         <nav>
-          <ul class="flex items-center gap-6">
+          <ul class="flex gap-6 items-center">
             <%= if @current_user do %>
               <li class="text-sm text-gray-700">
                 {@current_user.email}
@@ -38,23 +38,6 @@
                   class="text-sm font-medium text-gray-700 hover:text-gray-900"
                 >
                   Log out
-                </.link>
-              </li>
-            <% else %>
-              <li>
-                <.link
-                  href={~p"/users/register"}
-                  class="text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  Register
-                </.link>
-              </li>
-              <li>
-                <.link
-                  href={~p"/users/log_in"}
-                  class="text-sm font-medium text-gray-700 hover:text-gray-900"
-                >
-                  Log in
                 </.link>
               </li>
             <% end %>

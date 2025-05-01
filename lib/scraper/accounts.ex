@@ -269,15 +269,13 @@ defmodule Scraper.Accounts do
       {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
       Repo.insert!(user_token)
 
-      # Generate the URL for testing purposes
+      # Generate the URL for confirmation
       url = confirmation_url_fun.(encoded_token)
 
-      # Only auto-confirm in non-test environments
-      if Mix.env() != :test do
-        {:ok, _} = confirm_user(encoded_token)
-      end
+      # Auto-confirm the user
+      {:ok, _} = confirm_user(encoded_token)
 
-      # Return a fake email struct that tests can extract the token from
+      # Return an email struct that can be used in tests
       {:ok, %{to: user.email, text_body: url}}
     end
   end
