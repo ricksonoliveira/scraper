@@ -72,6 +72,12 @@ defmodule Scraper.Services.ScraperService do
     href = Floki.attribute(link, "href") |> List.first()
 
     if href do
+      # Get the page to get its URL for resolving relative links
+      page = Scraping.get_page!(page_id)
+
+      # Convert relative URLs to absolute URLs
+      absolute_url = convert_to_absolute_url(href, page.url)
+
       # Sanitize the name to handle encoding issues
       name =
         Floki.text(link)
@@ -79,11 +85,18 @@ defmodule Scraper.Services.ScraperService do
         |> String.replace(~r/[^\x00-\x7F]/, "")
         |> String.trim()
 
-      # If the name is empty after sanitization, use a default
-      name = if name == "", do: "Link", else: name
+      # If the name is empty after sanitization, extract a meaningful name from the URL path
+      name = extract_name_from_url(name, absolute_url)
+
+      # We now use a text column which can handle longer URLs, but still truncate extremely long ones
+      # to avoid any potential issues with extremely large values
+      truncated_url =
+        if String.length(absolute_url) > 10000,
+          do: String.slice(absolute_url, 0, 10000),
+          else: absolute_url
 
       # Create a link record and handle potential errors
-      case Scraping.create_link(%{url: href, name: name, page_id: page_id}) do
+      case Scraping.create_link(%{url: truncated_url, name: name, page_id: page_id}) do
         {:ok, link} -> {:ok, link}
         {:error, _} -> :error
       end
@@ -92,19 +105,102 @@ defmodule Scraper.Services.ScraperService do
     end
   end
 
+  # Helper function to convert relative URLs to absolute URLs
+  defp convert_to_absolute_url(href, base_url) do
+    cond do
+      # Already an absolute URL
+      String.starts_with?(href, "http://") || String.starts_with?(href, "https://") ->
+        href
+
+      # Protocol-relative URL (starts with //)
+      String.starts_with?(href, "//") ->
+        "https:" <> href
+
+      # Root-relative URL (starts with /)
+      String.starts_with?(href, "/") ->
+        uri = URI.parse(base_url)
+        "#{uri.scheme}://#{uri.host}#{href}"
+
+      # Relative URL (doesn't start with /)
+      true ->
+        base_uri = URI.parse(base_url)
+        base_path = base_uri.path || "/"
+        base_dir = Path.dirname(base_path)
+        base_dir = if base_dir == ".", do: "/", else: base_dir
+        path = Path.join(base_dir, href)
+        "#{base_uri.scheme}://#{base_uri.host}#{path}"
+    end
+  end
+
+  # Helper function to extract a meaningful name from a URL
+  def extract_name_from_url("", url) do
+    uri = URI.parse(url)
+    path = uri.path || "/"
+
+    # Extract the first path segment after the leading slash
+    segments = String.split(path, "/", trim: true)
+
+    name =
+      cond do
+        # If there's at least one path segment, use that
+        length(segments) > 0 ->
+          # Take the first segment and capitalize it
+          segment = Enum.at(segments, 0)
+          String.capitalize(segment)
+
+        # If there's a host but no path, use the host
+        uri.host && uri.host != "" ->
+          # Extract the domain name without TLD
+          host_parts = String.split(uri.host, ".", trim: true)
+
+          if length(host_parts) > 1 do
+            # For domains like example.com, use 'Example'
+            String.capitalize(Enum.at(host_parts, 0))
+          else
+            # For simple hosts, just capitalize
+            String.capitalize(uri.host)
+          end
+      end
+
+    # Clean up the name (replace hyphens with spaces, etc.)
+    name
+    |> String.replace("-", " ")
+    |> String.replace("_", " ")
+    |> String.trim()
+  end
+
+  def extract_name_from_url(name, _url) do
+    name
+  end
+
   @doc """
   Extracts and processes all links from a document.
   Returns a list of successfully created link records.
   """
   def extract_and_process_links(document, page_id) do
-    Floki.find(document, "a")
-    |> Enum.filter(fn link ->
-      # Only process links that have href attributes
-      href = Floki.attribute(link, "href") |> List.first()
-      href != nil
-    end)
-    |> Enum.map(fn link -> process_link(link, page_id) end)
-    |> Enum.filter(fn result -> match?({:ok, _}, result) end)
+    links =
+      Floki.find(document, "a")
+      |> Enum.filter(fn link ->
+        # Only process links that have href attributes
+        href = Floki.attribute(link, "href") |> List.first()
+        href != nil
+      end)
+
+    # Process each link individually and catch any errors
+    results =
+      Enum.reduce(links, [], fn link, acc ->
+        case process_link(link, page_id) do
+          {:ok, link_record} ->
+            [link_record | acc]
+
+          :error ->
+            # Skip this link and continue with the next one
+            acc
+        end
+      end)
+
+    # Return the successfully created links
+    results
   end
 
   @doc """
@@ -174,10 +270,14 @@ defmodule Scraper.Services.ScraperService do
   # Broadcasts a status update for a page to all subscribers.
   # This is used to update the UI in real-time when a page's status changes.
   defp broadcast_status_update(page) do
+    # Get the link count for this page using the more efficient count_links function
+    link_count = Scraping.count_links(page.id)
+
     Endpoint.broadcast("page:#{page.id}", "status_updated", %{
       id: page.id,
       status: page.status,
-      title: page.title
+      title: page.title,
+      link_count: link_count
     })
   end
 end

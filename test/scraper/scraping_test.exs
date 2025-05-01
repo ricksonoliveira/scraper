@@ -75,6 +75,23 @@ defmodule Scraper.ScrapingTest do
       assert updated_page.status == "completed"
     end
 
+    test "delete_page/1 deletes the page and its links", %{user: user} do
+      page = page_fixture(%{}, user)
+
+      # Add some links to the page
+      {:ok, _link1} = Scraping.create_link(%{url: "https://example.com/1", page_id: page.id})
+      {:ok, _link2} = Scraping.create_link(%{url: "https://example.com/2", page_id: page.id})
+
+      assert {:ok, %Page{}} = Scraping.delete_page(page)
+      assert Scraping.get_page(page.id) == nil
+      assert_raise Ecto.NoResultsError, fn -> Scraping.get_page!(page.id) end
+
+      # Verify links are deleted (due to foreign key constraint with on_delete: :delete_all)
+      {links, count} = Scraping.list_links(page.id)
+      assert links == []
+      assert count == 0
+    end
+
     test "count_links/1 returns the number of links for a page", %{user: user} do
       page = page_fixture(%{}, user)
       assert Scraping.count_links(page.id) == 0

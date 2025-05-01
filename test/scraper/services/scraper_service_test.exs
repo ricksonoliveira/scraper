@@ -45,6 +45,32 @@ defmodule Scraper.Services.ScraperServiceTest do
     end
   end
 
+  describe "process_link/2" do
+    test "extracts name from URL path when link text is empty" do
+      # Test the fallback case that extracts name from URL path with special characters
+      link_with_search_query = "/search?query=test&page=1"
+      assert "Search" == ScraperService.extract_name_from_url("", link_with_search_query)
+
+      # Test with a more complex URL path with multiple special characters
+      link_with_products = "/products?category=electronics&sort=price#top"
+      assert "Products" == ScraperService.extract_name_from_url("", link_with_products)
+
+      # Test with a URL that has a query string directly after domain
+      # When the path is empty, it extracts the name from the domain
+      link_with_root_query = "https://example.com?query=test&page=1"
+      assert "Example" == ScraperService.extract_name_from_url("", link_with_root_query)
+
+      # Test with a URL that has a simple host (no dots) to cover line 161
+      link_with_simple_host = "http://localhost/"
+      assert "Localhost" == ScraperService.extract_name_from_url("", link_with_simple_host)
+
+      # Test the fallback path extraction with special characters (lines 165-171)
+      # This URL has no host but has a path with special characters
+      link_with_special_chars = "/api/users?id=123#profile"
+      assert "Api" == ScraperService.extract_name_from_url("", link_with_special_chars)
+    end
+  end
+
   describe "process_page_scraping/1" do
     setup do
       user = user_fixture()
@@ -102,7 +128,7 @@ defmodule Scraper.Services.ScraperServiceTest do
       assert "Link 2" in link_names
     end
 
-    test "handles empty link text by using default name", %{user: user} do
+    test "extracts name from URL path when link text is empty", %{user: user} do
       # Create a test page
       {:ok, page} =
         Scraping.create_page(%{
@@ -112,7 +138,7 @@ defmodule Scraper.Services.ScraperServiceTest do
           user_id: user.id
         })
 
-      # HTML with a link that has no text content
+      # HTML with links that have no text content but different URL paths
       html = """
       <!DOCTYPE html>
       <html>
@@ -120,7 +146,10 @@ defmodule Scraper.Services.ScraperServiceTest do
           <title>Example Page Title</title>
         </head>
         <body>
-          <a href="https://example.com/empty-link"></a>
+          <a href="https://example.com/products"></a>
+          <a href="https://example.com/user-profile"></a>
+          <a href="/relative-path"></a>
+          <a href="https://api.example.com"></a>
         </body>
       </html>
       """
@@ -137,14 +166,131 @@ defmodule Scraper.Services.ScraperServiceTest do
       updated_page = Scraping.get_page!(page.id)
       assert updated_page.status == "completed"
 
-      # Verify link was created with default name
+      # Verify links were created with names extracted from URLs
+      {links, _total_count} = Scraping.list_links(page.id)
+      assert length(links) == 4
+
+      # Sort links by URL to make assertions easier
+      sorted_links = Enum.sort_by(links, & &1.url)
+
+      # First link should have name "Products" extracted from path
+      assert Enum.at(sorted_links, 0).url == "https://api.example.com"
+      assert Enum.at(sorted_links, 0).name == "Api"
+
+      # Second link should have name "Example" extracted from domain
+      assert Enum.at(sorted_links, 1).url == "https://example.com/products"
+      assert Enum.at(sorted_links, 1).name == "Products"
+
+      # Third link should have name "Relative path" extracted from path
+      assert Enum.at(sorted_links, 2).url == "https://example.com/relative-path"
+      assert Enum.at(sorted_links, 2).name == "Relative path"
+
+      # Fourth link should have name "User profile" extracted from path
+      assert Enum.at(sorted_links, 3).url == "https://example.com/user-profile"
+      assert Enum.at(sorted_links, 3).name == "User profile"
+    end
+
+    test "handles relative URLs by converting them to absolute URLs", %{user: user} do
+      # Create a test page
+      {:ok, page} =
+        Scraping.create_page(%{
+          url: "https://example.com/section/",
+          title: "Example Domain",
+          status: "in progress",
+          user_id: user.id
+        })
+
+      # HTML with different types of relative URLs
+      html = """
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Example Page Title</title>
+        </head>
+        <body>
+          <a href="/absolute-path">Root-relative link</a>
+          <a href="relative-path">Relative link</a>
+          <a href="../parent-path">Parent path link</a>
+          <a href="//example.org/protocol-relative">Protocol-relative link</a>
+        </body>
+      </html>
+      """
+
+      # Mock HTTPoison.get to return our HTML
+      expect(HTTPoison, :get, fn _url, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: html}}
+      end)
+
+      # Process the page
+      ScraperService.process_page_scraping(page)
+
+      # Verify the page was updated
+      updated_page = Scraping.get_page!(page.id)
+      assert updated_page.status == "completed"
+
+      # Verify links were created with absolute URLs
+      {links, _total_count} = Scraping.list_links(page.id)
+      assert length(links) == 4
+
+      # Extract URLs for easier assertion
+      urls = Enum.map(links, & &1.url) |> Enum.sort()
+
+      # Check that all URLs were converted to absolute URLs
+      assert "https://example.com/absolute-path" in urls
+      assert "https://example.com/section/relative-path" in urls
+      # This is how Path.join handles parent paths
+      assert "https://example.com/section/../parent-path" in urls
+      assert "https://example.org/protocol-relative" in urls
+    end
+
+    test "handles very long URLs by truncating them", %{user: user} do
+      # Create a test page
+      {:ok, page} =
+        Scraping.create_page(%{
+          url: "https://example.com",
+          title: "Example Domain",
+          status: "in progress",
+          user_id: user.id
+        })
+
+      # Generate a very long URL (over 10,000 characters)
+      very_long_path = String.duplicate("a", 10000)
+      very_long_url = "https://example.com/#{very_long_path}"
+
+      # HTML with a very long URL
+      html =
+        """
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Example Page Title</title>
+          </head>
+          <body>
+            <a href="#{very_long_url}">Very long URL</a>
+          </body>
+        </html>
+        """
+        |> String.replace("#{very_long_url}", very_long_url)
+
+      # Mock HTTPoison.get to return our HTML
+      expect(HTTPoison, :get, fn _url, _headers, _options ->
+        {:ok, %HTTPoison.Response{status_code: 200, body: html}}
+      end)
+
+      # Process the page
+      ScraperService.process_page_scraping(page)
+
+      # Verify the page was updated
+      updated_page = Scraping.get_page!(page.id)
+      assert updated_page.status == "completed"
+
+      # Verify link was created with truncated URL
       {links, _total_count} = Scraping.list_links(page.id)
       assert length(links) == 1
 
-      # The link should have the URL but the name should be the default "Link"
-      # since the link text is empty
-      assert hd(links).url == "https://example.com/empty-link"
-      assert hd(links).name == "Link"
+      # URL should be truncated to 10,000 characters
+      assert String.length(hd(links).url) == 10000
+      assert String.starts_with?(hd(links).url, "https://example.com/")
     end
 
     test "handles link creation error gracefully", %{user: user} do

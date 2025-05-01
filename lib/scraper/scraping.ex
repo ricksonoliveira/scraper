@@ -183,6 +183,11 @@ defmodule Scraper.Scraping do
       |> offset(^((page_number - 1) * page_size))
       |> Repo.all()
       |> Repo.preload(:links)
+      |> Enum.map(fn page ->
+        # Add the link count to each page
+        link_count = count_links(page.id)
+        Map.put(page, :link_count, link_count)
+      end)
 
     {pages, total_count}
   end
@@ -214,4 +219,20 @@ defmodule Scraper.Scraping do
 
   """
   defdelegate scrape_page(url, user), to: Scraper.Services.ScraperService
+
+  @doc """
+  Deletes a page and all associated links.
+
+  ## Examples
+
+      iex> delete_page(page)
+      {:ok, %Page{}}
+
+      iex> delete_page(page)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_page(%Page{} = page) do
+    Repo.delete(page)
+  end
 end
