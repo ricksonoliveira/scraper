@@ -69,31 +69,33 @@ defmodule Scraper.Services.ScraperServiceTest do
       link_with_special_chars = "/api/users?id=123#profile"
       assert "Api" == ScraperService.extract_name_from_url("", link_with_special_chars)
     end
-    
+
     test "handles Latin-1 encoded text in links" do
       # Create a mock page record
       page_id = 1
-      
+
       # Mock Scraping.get_page! to return a page with a URL
-      expect(Scraping, :get_page!, fn ^page_id -> 
+      expect(Scraping, :get_page!, fn ^page_id ->
         %Page{id: page_id, url: "https://example.com"}
       end)
-      
+
       # Mock Scraping.create_link to capture the name parameter
-      expect(Scraping, :create_link, fn params -> 
-        assert params[:name] == "Notícias" # Properly decoded from Latin-1
+      expect(Scraping, :create_link, fn params ->
+        # Properly decoded from Latin-1
+        assert params[:name] == "Notícias"
         assert params[:url] == "https://example.com/news"
         assert params[:page_id] == page_id
-        {:ok, %{id: 123}} 
+        {:ok, %{id: 123}}
       end)
-      
+
       # Create a link element with Latin-1 encoded text (Notícias)
       # <<78, 111, 116, 237, 99, 105, 97, 115>> is "Notícias" in Latin-1 encoding
-      link = {"a", [{"href", "https://example.com/news"}], [<<78, 111, 116, 237, 99, 105, 97, 115>>]}
-      
+      link =
+        {"a", [{"href", "https://example.com/news"}], [<<78, 111, 116, 237, 99, 105, 97, 115>>]}
+
       # Process the link
       result = ScraperService.process_link(link, page_id)
-      
+
       # Verify the result
       assert {:ok, %{id: 123}} = result
     end
