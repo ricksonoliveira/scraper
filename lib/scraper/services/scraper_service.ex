@@ -81,8 +81,7 @@ defmodule Scraper.Services.ScraperService do
       # Sanitize the name to handle encoding issues
       name =
         Floki.text(link)
-        # Remove non-ASCII characters
-        |> String.replace(~r/[^\x00-\x7F]/, "")
+        |> decode_binary_if_needed()
         |> String.trim()
 
       # If the name is empty after sanitization, extract a meaningful name from the URL path
@@ -129,6 +128,20 @@ defmodule Scraper.Services.ScraperService do
         base_dir = if base_dir == ".", do: "/", else: base_dir
         path = Path.join(base_dir, href)
         "#{base_uri.scheme}://#{base_uri.host}#{path}"
+    end
+  end
+
+  # Helper function to decode binary strings to UTF-8 strings
+  defp decode_binary_if_needed(binary) when is_binary(binary) do
+    case String.valid?(binary) do
+      true ->
+        binary
+
+      false ->
+        # For binary strings like <<78, 111, 116, 237, 99, 105, 97, 115>>
+        # Try to decode using Latin-1 (ISO-8859-1) encoding, which is common for web content
+        # This handles Spanish/Portuguese characters like í
+        :unicode.characters_to_binary(binary, :latin1, :utf8)
     end
   end
 
