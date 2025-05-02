@@ -8,7 +8,7 @@ A modern, user-friendly web application for scraping links from web pages. Built
 
 - User authentication system with registration, login, and password reset
 - Asynchronous web scraping with real-time updates
-- Responsive UI with Tailwind CSS
+- User-friendly UI with Tailwind CSS
 - Pagination for both scraped pages and links
 - Comprehensive test suite with 100% code coverage
 
