@@ -1,6 +1,6 @@
 # Web Scraper Application 🕷️🕸️
 
-A modern, responsive web application for scraping links from web pages. Built with Elixir, Phoenix, and LiveView, this application allows users to enter a URL, scrape all links from the page, and view the results in real-time.
+A modern, user-friendly web application for scraping links from web pages. Built with Elixir, Phoenix, and LiveView, this application allows users to enter a URL, scrape all links from the page, and view the results in real-time.
 
 ⚓ Deployed application: https://scraper-purple-voice-8836.fly.dev
 
