@@ -103,14 +103,14 @@ Following Phoenix best practices, the application is organized into contexts tha
 
 This separation of concerns makes the codebase more maintainable and testable.
 
-### Responsive UI Design 📱
+### Nice UI Design 🎨
 
-The UI is built with Tailwind CSS, providing a responsive experience across different device sizes. Key UI features include:
+The UI is built with Tailwind CSS, providing a nice user experience across different device sizes. Key UI features include:
 
 - Truncation with tooltips for long text
-- Responsive tables with appropriate column widths
-- Mobile-friendly navigation and pagination
-- Status indicators with appropriate colors
+- Auto screen size tables with appropriate column widths
+- User-friendly navigation and pagination
+- Status indicators with appropriate colors and icons
 
 ## Testing 🧪
 
@@ -197,5 +197,7 @@ With more time, the application could be enhanced with:
 6. **Enhanced Security**: Implement rate limiting, CAPTCHA verification, and more robust user permissions.
 
 7. **Distributed Scraping**: Scale the application using Elixir's distributed capabilities to handle very large websites.
+
+8. **Frontend Responsiveness**: Improve the frontend responsiveness and user experience for mobile devices.
 
 Cheers! 🍾
